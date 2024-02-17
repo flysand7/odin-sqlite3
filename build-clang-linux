@@ -1,0 +1,3 @@
+clang -c amalgamation/sqlite3.c -o sqlite3/bin/sqlite3.o
+llvm-ar rcs sqlite3/bin/sqlite3.a sqlite3/bin/sqlite3.o
+echo "sqlite3/bin/sqlite3.a compiled!"
