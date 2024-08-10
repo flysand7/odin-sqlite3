@@ -2,7 +2,7 @@ package sqlite3_wrapper
 
 import sqlite "../sqlite3"
 
-import "core:intrinsics"
+import "base:intrinsics"
 import "base:runtime"
 import "core:reflect"
 import "core:fmt"
@@ -49,12 +49,12 @@ sql_bind :: proc(db: ^DB, sql: string, args: ..any) -> (^Query, Status) {
         arg_idx := cast(i32) arg_idx + 1
         arg_info := runtime.type_info_base(type_info_of(arg.id))
         if arg == nil {
-            status := sqlite.bind_null(query, arg_idx)
+            status = sqlite.bind_null(query, arg_idx)
             if status == nil {
                 fmt.panicf("Unable to bind argument %v: %s", arg, status_explain(status))
             }
         }
-        status := Status.Ok
+        status = Status.Ok
         #partial switch arg_variant in arg_info.variant {
             case runtime.Type_Info_Integer:
                 value, ok := reflect.as_i64(arg)
@@ -85,10 +85,9 @@ where
     if struct_info.soa_kind != .None {
         fmt.panicf("#soa structs not accepted.")
     }
-    if struct_info.is_raw_union {
+    if .raw_union in struct_info.flags {
         fmt.panicf("Can not select into raw union: %v", typeid_of(T))
     }
-    struct_fields_count := len(struct_info.names)
     status := sqlite.step(query)
     if status != .Row {
         sqlite.finalize(query)
@@ -96,7 +95,7 @@ where
     }
     t := T {}
     t_bytes := transmute([^]u8) &t
-    for field, field_idx in struct_info.types {
+    for field, field_idx in struct_info.types[:struct_info.field_count] {
         col_idx := cast(i32) field_idx
         col_type := sqlite.column_type(query, col_idx)
         field_base := runtime.type_info_base(field)
@@ -115,23 +114,23 @@ where
                 }
                 value := sqlite.column_int64(query, col_idx)
                 switch field.size {
-                    case 1: (transmute(^b8)  &t_bytes[field_offs])^ = value != 0
-                    case 2: (transmute(^b16) &t_bytes[field_offs])^ = value != 0
-                    case 4: (transmute(^b32) &t_bytes[field_offs])^ = value != 0
-                    case 8: (transmute(^b64) &t_bytes[field_offs])^ = value != 0
-                    case:
-                        panic("Only bool sizes of 1, 2, 4 and 8 bytes are supported")
+                case 1: (transmute(^b8)  &t_bytes[field_offs])^ = value != 0
+                case 2: (transmute(^b16) &t_bytes[field_offs])^ = value != 0
+                case 4: (transmute(^b32) &t_bytes[field_offs])^ = value != 0
+                case 8: (transmute(^b64) &t_bytes[field_offs])^ = value != 0
+                case:
+                    panic("Only bool sizes of 1, 2, 4 and 8 bytes are supported")
                 }
             case runtime.Type_Info_Enum:
                 if col_type == .Integer {
                     value := sqlite.column_int64(query, col_idx)
                     switch field.size {
-                        case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8) value
-                        case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
-                        case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
-                        case 8: (transmute(^i64) &t_bytes[field_offs])^ = value
-                        case:
-                            panic("Only bool sizes of 1, 2, 4 and 8 bytes are supported")
+                    case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8) value
+                    case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
+                    case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
+                    case 8: (transmute(^i64) &t_bytes[field_offs])^ = value
+                    case:
+                        panic("Only bool sizes of 1, 2, 4 and 8 bytes are supported")
                     }
                 } else if col_type == .Text {
                     name := sqlite.column_text(query, col_idx)
@@ -146,12 +145,12 @@ where
                     }
                     value := field_variant.values[value_idx]
                     switch field.size {
-                        case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8)  value
-                        case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
-                        case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
-                        case 8: (transmute(^i64) &t_bytes[field_offs])^ = cast(i64) value
-                        case:
-                            panic("Only enum integer sizes of 1, 2, 4 and 8 bytes are supported")
+                    case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8)  value
+                    case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
+                    case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
+                    case 8: (transmute(^i64) &t_bytes[field_offs])^ = cast(i64) value
+                    case:
+                        panic("Only enum integer sizes of 1, 2, 4 and 8 bytes are supported")
                     }
                 } else {
                     fmt.panicf("Type mismatch: %v <- %v", typeid_of(type_of(field_variant)), col_type)
@@ -162,11 +161,11 @@ where
                 }
                 value := sqlite.column_double(query, col_idx)
                 switch field.size {
-                    case 2: (transmute(^f16) &t_bytes[field_offs])^ = cast(f16) value
-                    case 4: (transmute(^f32) &t_bytes[field_offs])^ = cast(f32) value
-                    case 8: (transmute(^f64) &t_bytes[field_offs])^ = value
-                    case:
-                        panic("Only float sizes of 2, 4 and 8 bytes are supported")
+                case 2: (transmute(^f16) &t_bytes[field_offs])^ = cast(f16) value
+                case 4: (transmute(^f32) &t_bytes[field_offs])^ = cast(f32) value
+                case 8: (transmute(^f64) &t_bytes[field_offs])^ = value
+                case:
+                    panic("Only float sizes of 2, 4 and 8 bytes are supported")
                 }
             case runtime.Type_Info_Integer:
                 if col_type != .Integer {
@@ -174,12 +173,12 @@ where
                 }
                 value := sqlite.column_int64(query, col_idx)
                 switch field.size {
-                    case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8)  value
-                    case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
-                    case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
-                    case 8: (transmute(^i64) &t_bytes[field_offs])^ = value
-                    case:
-                        panic("Only enum integer sizes of 1, 2, 4 and 8 bytes are supported")
+                case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8)  value
+                case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
+                case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
+                case 8: (transmute(^i64) &t_bytes[field_offs])^ = value
+                case:
+                    panic("Only enum integer sizes of 1, 2, 4 and 8 bytes are supported")
                 }
             case runtime.Type_Info_String:
                 if col_type != .Text {
