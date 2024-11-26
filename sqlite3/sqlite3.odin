@@ -13,6 +13,8 @@ when ODIN_OS == .Windows {
         "system:dl",
         "system:m",
     }
+} else when ODIN_OS == .Darwin {
+    foreign import sqlite3 "system:sqlite3"
 }
 
 VERSION        :: "3.45.1"
@@ -693,7 +695,7 @@ foreign sqlite3 {
         out_stmt: ^^Stmt,
         out_unused: ^cstring,
     ) -> Status ---
-    
+
     prepare16_v2 :: proc (
         conn: ^Sqlite3,
         sql: [^]u16,
@@ -1045,7 +1047,7 @@ foreign sqlite3 {
         ctx: rawptr,
     ) -> rawptr ---
     enable_shared_cache :: proc (en: b32) -> Status ---
-    release_memory :: proc (size: i32) -> Status --- 
+    release_memory :: proc (size: i32) -> Status ---
     db_release_memory :: proc (conn: ^Sqlite3) -> Status ---
     soft_heap_limit :: proc (size: i64) -> i64 ---
     hard_heap_limit :: proc (size: i64) -> i64 ---
