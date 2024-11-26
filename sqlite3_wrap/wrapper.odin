@@ -6,6 +6,7 @@ import "base:intrinsics"
 import "base:runtime"
 import "core:reflect"
 import "core:fmt"
+import "core:mem"
 
 DB :: sqlite.Sqlite3
 Query :: sqlite.Stmt
@@ -71,7 +72,11 @@ sql_bind :: proc(db: ^DB, sql: string, args: ..any) -> (^Query, Status) {
             case runtime.Type_Info_Boolean:
                 value, ok := reflect.as_bool(arg)
                 assert(ok)
-                status = sqlite.bind_int(query, arg_idx, cast(i32) value)                
+                status = sqlite.bind_int(query, arg_idx, cast(i32) value)
+            case runtime.Type_Info_Array:
+                if arg_variant.elem != u8 { fmt.panicf("Unsupported bind type", arg_variant) }
+                value := reflect.as_bytes(arg)
+                status = sqlite.bind_blob(statement.handle, arg_idx, raw_data(value), cast(i32) len(value), nil)
         }
     }
     return query, nil
@@ -190,6 +195,13 @@ where
                 } else {
                     (transmute(^string)  &t_bytes[field_offs])^ = cast(string) value
                 }
+            case runtime.Type_Info_Array:
+                if col_type != .Blob {
+                    fmt.panicf("Type mismatch: %v <- %v", typeid_of(type_of(field_variant)), col_type)
+                }
+                len := int(sqlite.column_bytes(statement.handle, col_idx))
+                value := sqlite.column_blob(statement.handle, col_idx)
+                mem.copy((transmute(^rawptr) &t_bytes[field_offs]), value, len)
             case:
                 panic("Unsupported type for accepting SQL values in the given struct")
         }
