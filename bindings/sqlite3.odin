@@ -1438,8 +1438,44 @@ PCache_Methods :: struct {
 
 Backup :: struct {}
 
-// left off at line 9304
+@(link_prefix="sqlite3_", default_calling_convention="c")
+foreign sqlite3 {
+    backup_init :: proc(dst: ^Sqlite3, dst_name: cstring, src: ^Sqlite3, src_name: cstring) ---
+    backup_step :: proc(b: ^Backup, page: i32) -> Status ---
+    backup_finish :: proc(b: ^Backup) -> Status ---
+    backup_remaining :: proc(b: ^Backup) -> Status ---
+    backup_pagecount :: proc(b: ^Backup) -> Status ---
+}
+
+
+Notify_Proc :: proc "c" (p_arg: ^rawptr, n_arg: i32) -> rawptr
 
 @(link_prefix="sqlite3_", default_calling_convention="c")
 foreign sqlite3 {
+    unlock_notify :: proc(blocked: ^Sqlite3, notify_proc: Notify_Proc, arg: rawptr) ---
+    stricmp :: proc(a,b: cstring) -> i32 ---
+    strnicmp :: proc(a,b: cstring, n: i32) -> i32  ---
+    strglob :: proc(glob: cstring, str: cstring) -> i32 ---
+    strlike :: proc(glob: cstring, str: cstring, esc: cstring) -> i32 ---
+    // log :: proc(err: i32, format: cstring, ...) /*Forgot how to do varargs in Odin*/
 }
+
+Wal_Hook_Proc :: proc "c"(ctx: rawptr, s: ^Sqlite3, db: cstring, n_pages: i32)
+
+Checkpoint :: enum i32 {
+    Passive = 0,
+    Full = 1,
+    Restart = 2,
+    Truncate = 3,
+}
+
+@(link_prefix="sqlite3_", default_calling_convention="c")
+foreign sqlite3 {
+    wal_hook :: proc(s: ^Sqlite3, hook: Wal_Hook_Proc, ctx: rawptr) ---
+    wal_autocheckpoint :: proc(s: ^Sqlite3, n: i32) -> Status ---
+    wal_checkpoint :: proc(s: ^Sqlite3, db: cstring) -> Status ---
+    wal_checkpoint_v2 :: proc(s: ^Sqlite3, db: cstring, mode: Checkpoint, n_log: ^i32, n_chpt: ^i32) -> Status ---
+}
+
+/* Stopped at sqlite3.h:9737 */
+/* sqlite3__vtab_config... */

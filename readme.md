@@ -1,31 +1,33 @@
 
 # odin-sqlite3
 
-This repository contains sqlite3 bindings for odin. The bindings are not fully
-complete and may still have some mistakes, in case you find any of them,
-contributions are welcome.
+> [!WARNING]
+> These bindings were hand-written and thus can contain many mistakes. In case
+> you found a mistake consider [opening up an issue](https://github.com/flysand7/odin-sqlite3/issues)
+> or making a [pull request](https://github.com/flysand7/odin-sqlite3/pulls).
+
+This repository contains sqlite3 bindings and a wrapper library for Odin.
 
 ## Project structure:
 
-- `/amalgamation`: contains sqlite3 amalgamation sources. Replace the contents
-    of the folder with fresh version of amalgamation to update the version.
-- `/sqlite3`: contains raw bindings of sqlite.
-- `/sqlite3/bin`: contains sqlite3 library binaries.
-- `/sqlite3_wrap`: contains a small wrapper over sqlite3, providing an easier
-    interface to iterate the query results.
-- `/test`: contains a small example of using the library.
+- `/amalgamation/`: sqlite3's official amalgamation of the source code. Replace
+    the contents of the folder with fresh version of amalgamation to update the version.
+- `/bindings/`: Raw bindings of sqlite3.
+- `/bindings/bin/`: Compiled binaries of the sqlite3 library.
+- `/wrapper/`: A more convenient interface to the sqlite3 library.
+- `/test/`: An example of using the sqlite3 wrapper.
 
 ## Building and usage.
 
-1. Clone this repository
+1. Clone this repository.
 2. Build the binaries:
     - Windows: Run `./build-cl.bat`, in case you want to build with MSVC compiler; or `./build-clang-windows.bat` to build the clang.
     - Linux: Run `./build-clang-linux`
-3. Copy the files to your project
-    - Just the bindings: copy `/sqlite3` directories.
-    - With the wrapper: copy `/sqlite3` and `sqlite3_wrap` directories.
+3. Copy the files to your project:
+    - Just the bindings: copy `/bindings` directories.
+    - With the wrapper: copy `/bindings` and `/wrapper` directories.
 
-## Example usage
+## Example
 
 ### Open the database:
 
