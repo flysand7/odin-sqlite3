@@ -1,3 +1,5 @@
+sqlite3/bin
+
 *.obj
 *.lib
 *.exe
