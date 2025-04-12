@@ -1,6 +1,6 @@
 package sqlite3_wrapper
 
-import sqlite "../bindings"
+import sqlite "bindings"
 
 import "base:intrinsics"
 import "base:runtime"
