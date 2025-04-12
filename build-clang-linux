@@ -1,3 +1,4 @@
+mkdir -p bindings/bin
 clang -c amalgamation/sqlite3.c -o bindings/bin/sqlite3.o
 llvm-ar rcs bindings/bin/sqlite3.a bindings/bin/sqlite3.o
 echo "bindings/bin/sqlite3.a compiled!"
