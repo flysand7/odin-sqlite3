@@ -73,6 +73,30 @@ sql_bind :: proc(db: ^DB, sql: string, args: ..any) -> (^Query, Status) {
                 value, ok := reflect.as_bool(arg)
                 assert(ok)
                 status = sqlite.bind_int(query, arg_idx, cast(i32) value)
+			case runtime.Type_Info_Bit_Set:
+				size_in_bits := type_info_of(arg_variant.elem.id).size
+				switch size_in_bits * 8 {
+				case 0: continue // Don't believe this is possible.
+				case 8:
+					value := (^i8)(arg.data)
+					status = sqlite.bind_int64(query, arg_idx, i64(value^))
+					continue
+				case 16:
+					value := (^i16)(arg.data)
+					status = sqlite.bind_int64(query, arg_idx, i64(value^))
+					continue
+				case 32:
+					value := (^i32)(arg.data)
+					status = sqlite.bind_int(query, arg_idx, value^)
+					continue
+				case 64:
+					value := (^i64)(arg.data)
+					status = sqlite.bind_int64(query, arg_idx, value^)
+					continue
+				case:
+					fmt.panicf("unknown bit_size byte size: %d", size_in_bits*8)
+				}
+				panic("bit_set type not supported yet")
             case runtime.Type_Info_Array:
                 if arg_variant.elem.id != u8 { fmt.panicf("Unsupported bind type", arg_variant) }
                 value := reflect.as_bytes(arg)
@@ -185,6 +209,19 @@ where
                 case:
                     panic("Only enum integer sizes of 1, 2, 4 and 8 bytes are supported")
                 }
+			case runtime.Type_Info_Bit_Set:
+				if col_type != .Integer {
+					fmt.panicf("Type mismatch: %v <- %v", typeid_of(type_of(field_variant)), col_type)
+				}
+				value := sqlite.column_int64(query, col_idx)
+				switch field.size {
+				case 1: (transmute(^i8)  &t_bytes[field_offs])^ = cast(i8)  value
+				case 2: (transmute(^i16) &t_bytes[field_offs])^ = cast(i16) value
+				case 4: (transmute(^i32) &t_bytes[field_offs])^ = cast(i32) value
+				case 8: (transmute(^i64) &t_bytes[field_offs])^ = value
+				case:
+					fmt.panicf("Only enum integer sizes of 1, 2, 4 and 8 bytes are supported for bit sets, received: %d", field.size)
+				}
             case runtime.Type_Info_String:
                 if col_type != .Text {
                     fmt.panicf("Type mismatch: %v <- %v", typeid_of(type_of(field_variant)), col_type)
