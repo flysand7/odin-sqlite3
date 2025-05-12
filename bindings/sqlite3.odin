@@ -42,7 +42,7 @@ foreign sqlite3 {
     // returns `nil`.
     compileoption_get  :: proc (n: i32) -> cstring ---
     // Test to see if sqlite is compiled with threadsafe options.
-    threadsafe         :: proc () -> b32 ---
+    threadsafe         :: proc () -> i32 ---
 }
 
 // Database connection handle.
